@@ -15,8 +15,8 @@ from globaleaks.rest import errors, requests
 from globaleaks.state import State
 from globaleaks.utils.utility import log, parse_csv_ip_ranges_to_ip_networks
 
-def db_admin_serialize_node(session, tid, language):
-    config = ConfigFactory(session, tid, 'admin_node').serialize()
+def db_admin_serialize_node(session, tid, language, node='admin_node'):
+    config = ConfigFactory(session, tid, node).serialize()
 
     # Contexts and Receivers relationship
     configured = session.query(models.ReceiverContext).filter(models.ReceiverContext.context_id == models.Context.id,
@@ -42,8 +42,8 @@ def db_admin_serialize_node(session, tid, language):
 
 
 @transact
-def admin_serialize_node(session, tid, language):
-    return db_admin_serialize_node(session, tid, language)
+def admin_serialize_node(session, tid, language, node='admin_node'):
+    return db_admin_serialize_node(session, tid, language, node)
 
 
 def db_update_enabled_languages(session, tid, languages_enabled, default_language):
@@ -122,7 +122,7 @@ def update_node(*args):
 
 
 class NodeInstance(BaseHandler):
-    check_roles = 'admin'
+    check_roles =  {'admin', 'receiver', 'custodian'}
     cache_resource = True
     invalidate_cache = True
 
@@ -130,7 +130,13 @@ class NodeInstance(BaseHandler):
         """
         Get the node infos.
         """
-        return admin_serialize_node(self.request.tid, self.request.language)
+        if self.current_user.user_role == 'admin':
+            node = 'admin_node'
+        else:
+            # We should handle ACL stuff here
+            node = 'general_settings'
+
+        return admin_serialize_node(self.request.tid, self.request.language, node=node)
 
     def put(self):
         """

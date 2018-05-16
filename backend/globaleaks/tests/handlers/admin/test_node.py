@@ -22,6 +22,14 @@ class TestNodeInstance(helpers.TestHandlerWithPopulatedDB):
         self.assertTrue(response['version'], __version__)
 
     @inlineCallbacks
+    def test_get_receiver(self):
+        handler = self.request(role='receiver')
+        response = yield handler.get()
+
+        self.assertNotIn('version', response)
+        self.assertIn('header_title_submissionpage', response)
+
+    @inlineCallbacks
     def test_put_update_node(self):
         self.dummyNode['hostname'] = 'blogleaks.blogspot.com'
 
@@ -91,3 +99,13 @@ class TestNodeInstance(helpers.TestHandlerWithPopulatedDB):
 
         self.assertNotEqual('xxx', resp['hostname'])
         self.assertNotEqual('yyy', resp['onionservice'])
+
+    @inlineCallbacks
+    def test_receiver_update_field(self):
+        '''Confirm fields out of the receiver's set updates are ignored'''
+
+        self.dummyNode['header_title_submissionpage'] = "Whisteblowing FTW"
+
+        handler = self.request(self.dummyNode, role='receiver')
+        resp = yield handler.put()
+        self.assertEqual("Whisteblowing FTW", resp['header_title_submissionpage'])
