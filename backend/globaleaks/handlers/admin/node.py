@@ -18,8 +18,8 @@ from globaleaks.rest import errors, requests
 from globaleaks.state import State
 from globaleaks.utils.utility import log, parse_csv_ip_ranges_to_ip_networks
 
-def db_admin_serialize_node(session, tid, language, node='admin_node'):
-    config = ConfigFactory(session, tid, node).serialize()
+def db_admin_serialize_node(session, tid, language, config_node='admin_node'):
+    config = ConfigFactory(session, tid, config_node).serialize()
 
     # Contexts and Receivers relationship
     configured = session.query(models.ReceiverContext).filter(models.ReceiverContext.context_id == models.Context.id,
@@ -45,8 +45,8 @@ def db_admin_serialize_node(session, tid, language, node='admin_node'):
 
 
 @transact
-def admin_serialize_node(session, tid, language, node='admin_node'):
-    return db_admin_serialize_node(session, tid, language, node)
+def admin_serialize_node(session, tid, language, config_node='admin_node'):
+    return db_admin_serialize_node(session, tid, language, config_node)
 
 
 def db_update_enabled_languages(session, tid, languages_enabled, default_language):
@@ -80,7 +80,7 @@ def update_enabled_languages(session, tid, languages_enabled, default_language):
     return db_update_enabled_languages(session, tid, languages_enabled, default_language)
 
 
-def db_update_node(session, tid, request, language):
+def db_update_node(session, tid, request, language, config_node):
     """
     Update and serialize the node infos
 
@@ -88,7 +88,7 @@ def db_update_node(session, tid, request, language):
     :param language: the language in which to localize data
     :return: a dictionary representing the serialization of the node
     """
-    node = ConfigFactory(session, tid, 'node')
+    node = ConfigFactory(session, tid, config_node)
 
     if tid != 1:
         request['enable_signup'] = False
@@ -130,15 +130,12 @@ class NodeInstance(BaseHandler):
     invalidate_cache = True
 
     @inlineCallbacks
-    def get(self):
-        """
-        Get the node infos.
-        """
+    def determine_allow_config_filter(self):
+        '''Determines what filters are allowed, else throws invalid authentication'''
         if self.current_user.user_role == 'admin':
             node = 'admin_node'
         else:
             # Get the full user so we can see what we can access
-
             user = yield get_user(self.request.tid,
                                   self.current_user.user_id,
                                   self.request.language)
@@ -147,14 +144,31 @@ class NodeInstance(BaseHandler):
             else:
                 raise errors.InvalidAuthentication
 
-        node = yield admin_serialize_node(self.request.tid, self.request.language, node=node)
-        return node
+        returnValue(node)
 
+    @inlineCallbacks
+    def get(self):
+        """
+        Get the node infos.
+        """
+
+        config_node = yield self.determine_allow_config_filter()
+        serialized_node = yield admin_serialize_node(self.request.tid,
+                                                     self.request.language,
+                                                     config_node=config_node)
+        returnValue(serialized_node)
+
+    @inlineCallbacks
     def put(self):
         """
         Update the node infos.
         """
-        request = self.validate_message(self.request.content.read(),
-                                        requests.AdminNodeDesc)
+        request = yield self.validate_message(self.request.content.read(),
+                                              requests.AdminNodeDesc)
 
-        return update_node(self.request.tid, request, self.request.language)
+        config_node = yield self.determine_allow_config_filter()
+        serialized_node = yield update_node(self.request.tid,
+                                            request,
+                                            self.request.language,
+                                            config_node)
+        returnValue(serialized_node)
