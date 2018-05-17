@@ -95,23 +95,29 @@ def db_update_node(session, tid, request, language, config_node):
 
     node.update(request)
 
-    if request['basic_auth'] and request['basic_auth_username'] and request['basic_auth_password']:
-        node.set_val(u'basic_auth', True)
-        node.set_val(u'basic_auth_username', request['basic_auth_username'])
-        node.set_val(u'basic_auth_password', request['basic_auth_password'])
-    else:
-        node.set_val(u'basic_auth', False)
+    if 'basic_auth' in request:
+        if request['basic_auth'] and request['basic_auth_username'] and request['basic_auth_password']:
+            node.set_val(u'basic_auth', True)
+            node.set_val(u'basic_auth_username', request['basic_auth_username'])
+            node.set_val(u'basic_auth_password', request['basic_auth_password'])
+        else:
+            node.set_val(u'basic_auth', False)
 
     # Validate that IP addresses/ranges we're getting are goo
-    if request['ip_filter_authenticated_enable'] and request['ip_filter_authenticated']:
-        # Make sure we can validate and parse the whole thing
-        parse_csv_ip_ranges_to_ip_networks(request['ip_filter_authenticated'])
+    if 'ip_filter_authenticated' in request:
+        if request['ip_filter_authenticated_enable'] and request['ip_filter_authenticated']:
+            # Make sure we can validate and parse the whole thing
+            parse_csv_ip_ranges_to_ip_networks(request['ip_filter_authenticated'])
 
-    db_update_enabled_languages(session, tid, request['languages_enabled'], request['default_language'])
+    if 'languages_enabled' in request and 'default_language' in request:
+        db_update_enabled_languages(session,
+                                    tid,
+                                    request['languages_enabled'],
+                                    request['default_language'])
 
-    if language in request['languages_enabled']:
-        node_l10n = NodeL10NFactory(session, tid)
-        node_l10n.update(request, language)
+        if language in request['languages_enabled']:
+            node_l10n = NodeL10NFactory(session, tid)
+            node_l10n.update(request, language)
 
     db_refresh_memory_variables(session, [tid])
 
@@ -133,14 +139,14 @@ class NodeInstance(BaseHandler):
     def determine_allow_config_filter(self):
         '''Determines what filters are allowed, else throws invalid authentication'''
         if self.current_user.user_role == 'admin':
-            node = 'admin_node'
+            node = ('admin_node', requests.AdminNodeDesc)
         else:
             # Get the full user so we can see what we can access
             user = yield get_user(self.request.tid,
                                   self.current_user.user_id,
                                   self.request.language)
             if user['can_edit_general_settings'] is True:
-                node = 'general_settings'
+                node = ('general_settings', requests.NonAdminGeneralSettingsDesc)
             else:
                 raise errors.InvalidAuthentication
 
@@ -155,7 +161,7 @@ class NodeInstance(BaseHandler):
         config_node = yield self.determine_allow_config_filter()
         serialized_node = yield admin_serialize_node(self.request.tid,
                                                      self.request.language,
-                                                     config_node=config_node)
+                                                     config_node=config_node[0])
         returnValue(serialized_node)
 
     @inlineCallbacks
@@ -163,12 +169,14 @@ class NodeInstance(BaseHandler):
         """
         Update the node infos.
         """
-        request = yield self.validate_message(self.request.content.read(),
-                                              requests.AdminNodeDesc)
 
         config_node = yield self.determine_allow_config_filter()
+
+        request = yield self.validate_message(self.request.content.read(),
+                                              config_node[1])
+
         serialized_node = yield update_node(self.request.tid,
                                             request,
                                             self.request.language,
-                                            config_node)
+                                            config_node[0])
         returnValue(serialized_node)
