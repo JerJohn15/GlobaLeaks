@@ -22,7 +22,7 @@ class TestNodeInstance(helpers.TestHandlerWithPopulatedDB):
         self.assertTrue(response['version'], __version__)
 
     @inlineCallbacks
-    def test_get_receiver(self):
+    def test_get_receiver_with_priv_acl(self):
         handler = self.request(role='receiver')
         response = yield handler.get()
 

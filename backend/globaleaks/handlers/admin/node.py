@@ -5,10 +5,13 @@
 # Implementation of the code executed on handler /admin/node
 from six import text_type
 
+from twisted.internet.defer import inlineCallbacks, returnValue
+
 from globaleaks import models, utils, LANGUAGES_SUPPORTED_CODES, LANGUAGES_SUPPORTED
 from globaleaks.db import db_refresh_memory_variables
 from globaleaks.db.appdata import load_appdata
 from globaleaks.handlers.base import BaseHandler
+from globaleaks.handlers.admin.user import get_user
 from globaleaks.models.config import ConfigFactory, NodeL10NFactory
 from globaleaks.orm import transact
 from globaleaks.rest import errors, requests
@@ -126,6 +129,7 @@ class NodeInstance(BaseHandler):
     cache_resource = True
     invalidate_cache = True
 
+    @inlineCallbacks
     def get(self):
         """
         Get the node infos.
@@ -133,10 +137,18 @@ class NodeInstance(BaseHandler):
         if self.current_user.user_role == 'admin':
             node = 'admin_node'
         else:
-            # We should handle ACL stuff here
-            node = 'general_settings'
+            # Get the full user so we can see what we can access
 
-        return admin_serialize_node(self.request.tid, self.request.language, node=node)
+            user = yield get_user(self.request.tid,
+                                  self.current_user.user_id,
+                                  self.request.language)
+            if user['can_edit_general_settings'] is True:
+                node = 'general_settings'
+            else:
+                raise errors.InvalidAuthentication
+
+        node = yield admin_serialize_node(self.request.tid, self.request.language, node=node)
+        return node
 
     def put(self):
         """

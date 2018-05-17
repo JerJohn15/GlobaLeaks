@@ -143,7 +143,8 @@ UserUserDesc = {
     'pgp_key_fingerprint': text_type,
     'pgp_key_expiration': text_type,
     'pgp_key_public': text_type,
-    'language': text_type
+    'language': text_type,
+    'can_edit_general_settings': bool
 }
 
 AdminUserDesc = UserUserDesc # currently the same
