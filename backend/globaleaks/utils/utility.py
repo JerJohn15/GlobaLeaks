@@ -82,8 +82,16 @@ def get_disk_space(path):
 
 
 def read_file(p):
-    with open(p, 'r', encoding='utf-8') as f:
-        return f.read().rstrip("\n")
+    # This is annoying, as on Windows/Py3, this might not
+    # open with the right encoding, but Py2 will not
+    # take the correct argument
+
+    if sys.version_info[0] == 2:
+        with open(p, 'r', encoding='utf-8') as f:
+            return f.read().rstrip("\n")
+    else:
+        with open(p, 'r', encoding='utf-8') as f:
+            return f.read().rstrip("\n")
 
 
 def read_json_file(p):
