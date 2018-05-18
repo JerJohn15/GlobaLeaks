@@ -515,7 +515,7 @@ class BaseHandler(object):
                 yield deferred_sleep(needed_delay)
 
     @inlineCallbacks
-    def can_edit_general_settings(self):
+    def can_edit_general_settings_or_raise(self):
         '''Determines if this user has ACL permissions to edit general settings'''
 
         from globaleaks.handlers.admin.user import get_user
@@ -530,4 +530,4 @@ class BaseHandler(object):
             if user['can_edit_general_settings'] is True:
                 returnValue(True)
 
-        returnValue(False)
+        raise errors.InvalidAuthentication

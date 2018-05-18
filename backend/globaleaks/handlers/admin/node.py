@@ -139,12 +139,8 @@ class NodeInstance(BaseHandler):
         if self.current_user.user_role == 'admin':
             node = ('admin_node', requests.AdminNodeDesc)
         else:
-            # Get the full user so we can see what we can access
-            acl_flag = yield self.can_edit_general_settings()
-            if acl_flag is True:
-                node = ('general_settings', requests.NonAdminGeneralSettingsDesc)
-            else:
-                raise errors.InvalidAuthentication
+            yield self.can_edit_general_settings_or_raise()
+            node = ('general_settings', requests.NonAdminGeneralSettingsDesc)
 
         returnValue(node)
 
