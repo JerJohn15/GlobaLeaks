@@ -44,7 +44,7 @@ class TestNodeInstance(helpers.TestHandlerWithPopulatedDB):
 
     @inlineCallbacks
     def test_get_receiver_general_settings_acl(self):
-        '''Confirm receivers can read general settings ACL''' 
+        '''Confirm receivers can read general settings ACL'''
         yield set_receiver_acl_flag_true(self.rcvr_id)
 
         handler = self.request(user_id=self.rcvr_id, role='receiver')
