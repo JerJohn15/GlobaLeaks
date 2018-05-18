@@ -11,7 +11,6 @@ from globaleaks import models, utils, LANGUAGES_SUPPORTED_CODES, LANGUAGES_SUPPO
 from globaleaks.db import db_refresh_memory_variables
 from globaleaks.db.appdata import load_appdata
 from globaleaks.handlers.base import BaseHandler
-from globaleaks.handlers.admin.user import get_user
 from globaleaks.models.config import ConfigFactory, NodeL10NFactory
 from globaleaks.orm import transact
 from globaleaks.rest import errors, requests
@@ -129,7 +128,6 @@ def db_update_node(session, tid, request, language, config_node):
 def update_node(*args):
     return db_update_node(*args)
 
-
 class NodeInstance(BaseHandler):
     check_roles =  {'admin', 'receiver', 'custodian'}
     cache_resource = True
@@ -142,10 +140,8 @@ class NodeInstance(BaseHandler):
             node = ('admin_node', requests.AdminNodeDesc)
         else:
             # Get the full user so we can see what we can access
-            user = yield get_user(self.request.tid,
-                                  self.current_user.user_id,
-                                  self.request.language)
-            if user['can_edit_general_settings'] is True:
+            acl_flag = yield self.can_edit_general_settings()
+            if acl_flag is True:
                 node = ('general_settings', requests.NonAdminGeneralSettingsDesc)
             else:
                 raise errors.InvalidAuthentication
