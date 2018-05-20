@@ -870,7 +870,7 @@ echo " + required TCP sockets open"
 # Depending on the intention of the user to proceed anyhow installing on
 # a not supported distro we using the experimental package if it exists
 # or xenial as fallback.
-if echo "$DISTRO_CODENAME" | grep -vqE "^(trusty|xenial|wheezy|jessie|stretch)$"; then
+if echo "$DISTRO_CODENAME" | grep -vqE "^(trusty|bionic|xenial|wheezy|jessie|stretch)$"; then
   # In case of unsupported platforms we fallback on Xenial
   echo "No packages available for the current distribution; the install script will use the Xenial repository."
   echo "In case of a failure refer to the wiki for manual setup possibilities."
@@ -903,19 +903,25 @@ if echo "$DISTRO" | grep -qE "^(Ubuntu)$"; then
   fi
 fi
 
-# Add repository and Tor key for Tor =>0.2.9, skipping distro that already have it (we start with ubuntu 17.10 artful)
-if echo "$DISTRO_CODENAME" | grep -vqE "^artful$" ; then
+if echo "$DISTRO_CODENAME" | grep -vq "^xenial$" ; then
+  DO  "add-apt-repository ppa:certbot/certbot"
+  DO "apt-get update"
+  DO "apt-get install certbot"
+elif echo "$DISTRO_CODENAME" | grep -vq "^stretch$" ; then
+  DO  "add-apt-repository 'deb http://ftp.debian.org/debian/ stretch-backports main'"
+fi
 
-   echo "Adding Tor PGP key to trusted APT"
-   TMPFILE=$TMPDIR/torproject_key
-   echo "$TOR_PGP_KEY" > $TMPFILE
-   DO "apt-key add $TMPFILE"
-   DO "rm $TMPFILE"
 
-  if ! grep -q "^deb .*torproject" /etc/apt/sources.list /etc/apt/sources.list.d/*; then
-    echo "Adding Tor repository"
-    DO "add-apt-repository 'deb http://deb.torproject.org/torproject.org $DISTRO_CODENAME main'"
-  fi
+# Add Tor repository and its key
+echo "Adding Tor PGP key to trusted APT"
+TMPFILE=$TMPDIR/torproject_key
+echo "$TOR_PGP_KEY" > $TMPFILE
+DO "apt-key add $TMPFILE"
+DO "rm $TMPFILE"
+
+if ! grep -q "^deb .*torproject" /etc/apt/sources.list /etc/apt/sources.list.d/*; then
+  echo "Adding Tor repository"
+  DO "add-apt-repository 'deb http://deb.torproject.org/torproject.org $DISTRO_CODENAME main'"
 fi
 
 if [ -d /globaleaks/deb ]; then
