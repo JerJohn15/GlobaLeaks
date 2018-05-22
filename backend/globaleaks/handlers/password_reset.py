@@ -8,8 +8,10 @@ from twisted.internet.defer import inlineCallbacks
 
 from globaleaks import models
 from globaleaks.handlers.base import BaseHandler
+from globaleaks.handlers.user import user_serialize_user
+
 from globaleaks.orm import transact
-from globaleaks.rest import requests
+from globaleaks.rest import errors, requests
 from globaleaks.utils.utility import datetime_now
 from globaleaks.utils.security import generateRandomKey
 
@@ -47,9 +49,15 @@ def db_generate_password_reset_token(session, tid, username, email):
     '''Generates a reset token against the backend'''
 
     user = session.query(models.User).filter(
-        models.User.name == username,
+        models.User.username == username,
         models.User.mail_address == email
     ).one_or_none()
+
+    if user is None:
+        raise errors.InvalidAuthentication
+
+    user_dict = user_serialize_user(session, user, user.language)
+    print(user_dict)
 
 class PasswordResetHandler(BaseHandler):
     check_roles = '*'
@@ -67,7 +75,7 @@ class PasswordResetHandler(BaseHandler):
     def post(self):
         request = self.validate_message(self.request.content.read(),
                                         requests.PasswordResetDesc)
-        print("HERE")
+
         yield generate_password_reset_token(self.request.tid,
                                             request['username'],
                                             request['mail_address'])
