@@ -12,17 +12,14 @@
           <input class="form-control" name="password" data-ng-model="loginPassword" type="password" required />
         </div>
 
+        <div data-ng-if="::passwordResetEnabled">
+          <a href="/#/login/passwordreset"><span data-translate>Reset password ...</span></a>
+        </div>
+  
         <button id="login-button" class="btn btn-success" data-ng-disabled="Authentication.loginInProgress || loginForm.$invalid" data-ng-click="Authentication.login(loginUsername, loginPassword)" type="submit">
           <i class="glyphicon glyphicon-log-in"></i>
           <span data-translate>Log in</span>
         </button>
-
-        <div data-ng-if="admin.node.enable_password_reset">
-          <button id="reset-password-button" class="btn" data-ng-click="Authentication.login(loginUsername, loginPassword)" type="submit">
-            <span data-translate>Reset Password</span>
-          </button>        
-        </div>
-
       </div>
       <div data-ng-if="::simplifiedLogin">
         <div class="form-group">

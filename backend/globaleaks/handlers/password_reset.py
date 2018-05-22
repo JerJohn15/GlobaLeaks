@@ -67,7 +67,7 @@ class PasswordResetHandler(BaseHandler):
     def post(self):
         request = self.validate_message(self.request.content.read(),
                                         requests.PasswordResetDesc)
-
+        print("HERE")
         yield generate_password_reset_token(self.request.tid,
                                             request['username'],
                                             request['mail_address'])
