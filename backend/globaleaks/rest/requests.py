@@ -563,3 +563,8 @@ ExceptionDesc = {
     'stackTrace': list,
     'agent': text_type
 }
+
+PasswordResetDesc = {
+    'username': text_type,
+    'email': text_type
+}

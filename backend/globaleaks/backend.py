@@ -28,7 +28,7 @@ from globaleaks.workers.supervisor import ProcessSupervisor
 def fail_startup(excep):
     log.err("ERROR: Cannot start GlobaLeaks. Please manually examine the exception.")
     log.err("EXCEPTION: %s",  excep)
-    log.debug('TRACE: %s', traceback.format_exc(excep))
+    raise excep
     if reactor.running:
         reactor.stop()
 
