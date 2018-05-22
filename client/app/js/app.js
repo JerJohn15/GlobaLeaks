@@ -380,7 +380,7 @@ var GLClient = angular.module('GLClient', [
       }).
       when('/login/resetpassword', {
         templateUrl: 'views/password_reset.html',
-        controller: 'ResetPasswordCtrl',
+        controller: 'LoginCtrl',
         header_title: 'Reset Password',
         header_subtitle: '',
         resolve: {

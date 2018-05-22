@@ -31,18 +31,25 @@ def db_validate_password_reset(session, validation_token):
     if user is None:
         return False
 
-    user.mail_address = user.change_email_address
     user.reset_password_token = None
     user.reset_password_date = datetime_now()
     user.password_change_needed = True
 
     return True
 
-def generate_password_reset_token(session):
+@transact
+def generate_password_reset_token(session, tid, username, email):
     '''transact version of db_generate_password_reset_token'''
 
-def db_generate_password_reset_token(session):
+    return db_generate_password_reset_token(session, tid, username, email)
+
+def db_generate_password_reset_token(session, tid, username, email):
     '''Generates a reset token against the backend'''
+
+    user = session.query(models.User).filter(
+        models.User.name == username,
+        models.User.mail_address == email
+    ).one_or_none()
 
 class PasswordResetHandler(BaseHandler):
     check_roles = '*'
@@ -61,5 +68,7 @@ class PasswordResetHandler(BaseHandler):
         request = self.validate_message(self.request.content.read(),
                                         requests.PasswordResetDesc)
 
-
-        print(request)
+        yield generate_password_reset_token(self.request.tid,
+                                            request['username'],
+                                            request['mail_address'])
+        return None

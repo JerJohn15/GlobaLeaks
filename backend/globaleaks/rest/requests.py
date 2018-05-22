@@ -566,5 +566,5 @@ ExceptionDesc = {
 
 PasswordResetDesc = {
     'username': text_type,
-    'email': text_type
+    'mail_address': text_type
 }
