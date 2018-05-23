@@ -16,15 +16,15 @@ from globaleaks.state import State
 from globaleaks.utils.utility import datetime_now
 from globaleaks.utils.security import generateRandomKey
 
-from globaleaks.utils.security import change_password, generateRandomKey
+from globaleaks.utils.security import hash_password, generateRandomKey
 
 @transact
-def validate_password_reset(session, validation_token):
+def validate_password_reset(session, state, tid, reset_token):
     '''transact version of db_validate_address_change'''
-    return db_validate_password_reset(session, validation_token)
+    return db_validate_password_reset(session, state, tid, reset_token)
 
 
-def db_validate_password_reset(session, validation_token):
+def db_validate_password_reset(session, state, tid, reset_token):
     '''Retrieves a user given a password reset validation token'''
     from globaleaks.handlers.admin.notification import db_get_notification
     from globaleaks.handlers.admin.node import db_admin_serialize_node
@@ -32,12 +32,36 @@ def db_validate_password_reset(session, validation_token):
     from globaleaks.handlers.user import user_serialize_user
 
     user = session.query(models.User).filter(
-        models.User.reset_password_token == validation_token,
+        models.User.reset_password_token == reset_token,
         models.User.reset_password_date >= datetime.now() - timedelta(hours=72)
     ).one_or_none()
 
     if user is None:
         return False
+
+    # Token is used, void it out
+    user.reset_password_token = None
+    user.reset_password_date = datetime_now()
+    user.password_change_needed = True
+
+    # Set the new password
+    user_desc = user_serialize_user(session, user, user.language)
+    new_password = generateRandomKey(32)
+    pw_hash = hash_password(new_password, user.salt)
+
+    user.password = pw_hash
+    session.commit()
+
+    # and now send the new PW
+    template_vars = {
+        'type': 'password_reset_complete',
+        'user': user_desc,
+        'new_password': new_password,
+        'node': db_admin_serialize_node(session, 1, user.language),
+        'notification': db_get_notification(session, tid, user.language)
+    }
+
+    state.format_and_send_mail(session, tid, user_desc, template_vars)
 
     return True
 
@@ -63,7 +87,7 @@ def db_generate_password_reset_token(session, state, tid, username, email):
 
     user.reset_password_token = generateRandomKey(32)
     user.reset_password_date = datetime_now()
-    user.password_change_needed = True
+    session.commit()
 
     user_desc = user_serialize_user(session, user, user.language)
 
@@ -79,13 +103,15 @@ def db_generate_password_reset_token(session, state, tid, username, email):
 
 class PasswordResetHandler(BaseHandler):
     check_roles = '*'
-    redirect_url = "/#/login/resetpassword/successful"
+    redirect_url = "/#/login/passwordreset/success"
 
     @inlineCallbacks
-    def get(self, validation_token):
-        check = yield validate_password_reset(validation_token)
+    def get(self, reset_token):
+        check = yield validate_password_reset(self.state,
+                                              self.request.tid,
+                                              reset_token)
         if not check:
-            self.redirect_url = "/#/login/resetpassword/failure"
+            self.redirect_url = "/#/login/passwordreset/failure"
 
         self.redirect(self.redirect_url)
 

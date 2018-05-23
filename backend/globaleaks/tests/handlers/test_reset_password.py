@@ -13,10 +13,17 @@ from globaleaks.tests import helpers
 from globaleaks.utils.utility import datetime_now
 
 @transact
-def set_reset_token(session, user_id, validation_token, email):
+def set_reset_token(session, user_id, validation_token):
     user = models.db_get(session, models.User, models.User.id == user_id)
     user.change_email_date = datetime_now()
     user.reset_password_token = validation_token
+    session.commit()
+
+@transact
+def get_user(session, user_id):
+    user = models.db_get(session, models.User, models.User.id == user_id)
+    session.expunge(user)
+    return user
 
 class TestPasswordResetInstance(helpers.TestHandlerWithPopulatedDB):
     _handler = password_reset.PasswordResetHandler
@@ -33,34 +40,38 @@ class TestPasswordResetInstance(helpers.TestHandlerWithPopulatedDB):
     @inlineCallbacks
     def test_get_success(self):
         handler = self.request()
+
+        # Get the original password being used
+        user_orig = yield get_user(self.rcvr_id)
+        
         yield set_reset_token(
             self.user['id'],
             u"token",
-            u"test@changeemail.com"
         )
 
         yield handler.get(u"token")
 
         # Now we check if the token was update
-        for r in (yield receiver.get_receiver_list(1, 'en')):
-            if r['pgp_key_fingerprint'] == u'BFB3C82D1B5F6A94BDAC55C6E70460ABF9A4C8C1':
-                self.assertEqual(r['mail_address'], 'test@changeemail.com')
+        user = yield get_user(self.rcvr_id)
+        self.assertNotEqual(user.password, user_orig.password)
 
     @inlineCallbacks
     def test_get_failure(self):
         handler = self.request()
+
+        # Get the original password being used
+        user_orig = yield get_user(self.rcvr_id)
+
         yield set_reset_token(
             self.user['id'],
-            u"token",
-            u"test@changeemail.com"
+            u"token"
         )
 
         yield handler.get(u"wrong_token")
 
         # Now we check if the token was update
-        for r in (yield receiver.get_receiver_list(1, 'en')):
-            if r['pgp_key_fingerprint'] == u'BFB3C82D1B5F6A94BDAC55C6E70460ABF9A4C8C1':
-                self.assertNotEqual(r['mail_address'], 'test@changeemail.com')
+        user = yield get_user(self.rcvr_id)
+        self.assertEqual(user.password, user_orig.password)
 
     @inlineCallbacks
     def test_post(self):
@@ -73,6 +84,5 @@ class TestPasswordResetInstance(helpers.TestHandlerWithPopulatedDB):
         yield handler.post()
 
         # Now we check if the token was update
-        for r in (yield receiver.get_receiver_list(1, 'en')):
-            if r['pgp_key_fingerprint'] == u'BFB3C82D1B5F6A94BDAC55C6E70460ABF9A4C8C1':
-                self.assertNotEqual(r['mail_address'], 'test@changeemail.com')
+        user = yield get_user(self.rcvr_id)
+        self.assertNotEqual(user.reset_password_token, None)

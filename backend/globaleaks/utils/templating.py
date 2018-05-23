@@ -112,8 +112,14 @@ email_validation_keywords = [
 password_reset_validation_keyworlds = [
     '{RecipientName}',
     '{TorUrl}',
-    '{HTTPSUrl}'
+    '{HTTPSUrl}',
     '{NodeName}'
+]
+
+password_reset_complete_keyworlds = [
+    '{RecipientName}',
+    '{NodeName}',
+    '{NewPassword}'
 ]
 
 def indent(n=1):
@@ -554,11 +560,19 @@ class PasswordResetValidation(UserNodeKeyword):
         ['reset_token']
 
     def TorUrl(self):
-        return 'http://' + self.data['node']['onionservice'] + '/email/validation/' + self.data['reset_token']
+        return 'http://' + self.data['node']['onionservice'] + '/reset/password/' + self.data['reset_token']
 
     def HTTPSUrl(self):
-        return 'https://' + self.data['node']['hostname'] + '/email/validation/' + self.data['reset_token']
+        return 'https://' + self.data['node']['hostname'] + '/reset/password/' + self.data['reset_token']
 
+class PasswordResetComplete(UserNodeKeyword):
+    keyword_list = NodeKeyword.keyword_list + password_reset_complete_keyworlds
+
+    data_keys = NodeKeyword.data_keys + \
+        ['new_password']
+
+    def NewPassword(self):
+        return self.data['new_password']
 
 supported_template_types = {
     u'tip': TipKeyword,
@@ -579,7 +593,8 @@ supported_template_types = {
     u'signup': PlatformSignupKeyword,
     u'activation': PlatformSignupKeyword,
     u'email_validation': EmailValidationKeyword,
-    u'password_reset_validation': PasswordResetValidation
+    u'password_reset_validation': PasswordResetValidation,
+    u'password_reset_complete': PasswordResetComplete
 }
 
 
