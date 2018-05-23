@@ -11,6 +11,7 @@ from globaleaks.handlers.admin import receiver
 from globaleaks.rest import errors
 from globaleaks.tests import helpers
 from globaleaks.utils.utility import datetime_now
+from globaleaks.state import State
 
 @transact
 def set_reset_token(session, user_id, validation_token):
@@ -57,6 +58,7 @@ class TestPasswordResetInstance(helpers.TestHandlerWithPopulatedDB):
 
     @inlineCallbacks
     def test_get_failure(self):
+        State.tenant_cache[1]['enable_password_reset'] = True
         handler = self.request()
 
         # Get the original password being used
@@ -74,7 +76,28 @@ class TestPasswordResetInstance(helpers.TestHandlerWithPopulatedDB):
         self.assertEqual(user.password, user_orig.password)
 
     @inlineCallbacks
+    def test_get_disabled(self):
+        State.tenant_cache[1]['enable_password_reset'] = False
+        handler = self.request()
+
+        # Get the original password being used
+        user_orig = yield get_user(self.rcvr_id)
+
+        yield set_reset_token(
+            self.user['id'],
+            u"token"
+        )
+
+        yield handler.get(u"token")
+
+        # Now we check if the token was update
+        user = yield get_user(self.rcvr_id)
+        self.assertNotEqual(user.password, user_orig.password)
+
+    @inlineCallbacks
     def test_post(self):
+        State.tenant_cache[1]['enable_password_reset'] = True
+
         data_request = {
             'username': self.user['username'],
             'mail_address': self.user['mail_address']

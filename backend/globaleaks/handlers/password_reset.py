@@ -103,15 +103,18 @@ def db_generate_password_reset_token(session, state, tid, username, email):
 
 class PasswordResetHandler(BaseHandler):
     check_roles = '*'
-    redirect_url = "/#/login/passwordreset/success"
+    redirect_url = "/#/login/passwordreset/failure"
 
     @inlineCallbacks
     def get(self, reset_token):
+        if State.tenant_cache[self.request.tid]['enable_password_reset'] is False:
+            self.redirect(self.redirect_url)
+
         check = yield validate_password_reset(self.state,
                                               self.request.tid,
                                               reset_token)
-        if not check:
-            self.redirect_url = "/#/login/passwordreset/failure"
+        if check:
+            self.redirect_url = "/#/login/passwordreset/success"
 
         self.redirect(self.redirect_url)
 
@@ -119,6 +122,9 @@ class PasswordResetHandler(BaseHandler):
     def post(self):
         request = self.validate_message(self.request.content.read(),
                                         requests.PasswordResetDesc)
+
+        if State.tenant_cache[self.request.tid]['enable_password_reset'] is False:
+            return None
 
         yield generate_password_reset_token(self.state,
                                             self.request.tid,
