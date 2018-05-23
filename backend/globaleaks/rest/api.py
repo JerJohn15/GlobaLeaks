@@ -112,6 +112,7 @@ api_spec = [
     (r'/email/validation/(.+)', email_validation.EmailValidation),
 
     ## Reset Password Handler
+    (r'/reset/password', password_reset.PasswordResetHandler),
     (r'/reset/password/(.+)', password_reset.PasswordResetHandler),
 
     ## Admin Handlers ##
