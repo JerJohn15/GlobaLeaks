@@ -109,6 +109,12 @@ email_validation_keywords = [
     '{TorUrl}'
 ]
 
+password_reset_validation_keyworlds = {
+    '{RecipientName}',
+    '{TorUrl}',
+    '{HTTPSUrl}'
+    '{NodeName}'
+}
 def indent(n=1):
     return '  ' * n
 
@@ -539,6 +545,9 @@ class EmailValidationKeyword(UserNodeKeyword):
 
     def HTTPSUrl(self):
         return 'https://' + self.data['node']['hostname'] + '/email/validation/' + self.data['validation_token']
+
+class PasswordResetValidation(UserNodeKeyword):
+    keyword_list = NodeKeyword + password_reset_validation_keyworlds
 
 supported_template_types = {
     u'tip': TipKeyword,
