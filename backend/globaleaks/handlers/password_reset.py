@@ -11,12 +11,8 @@ from globaleaks.handlers.base import BaseHandler
 from globaleaks.handlers.user import user_serialize_user
 
 from globaleaks.orm import transact
-<<<<<<< HEAD
 from globaleaks.rest import requests, errors
 from globaleaks.state import State
-=======
-from globaleaks.rest import errors, requests
->>>>>>> 7751c20deb63d41d23a0fb00db74e3045fe1b8db
 from globaleaks.utils.utility import datetime_now
 from globaleaks.utils.security import generateRandomKey
 
@@ -43,6 +39,28 @@ def db_validate_password_reset(session, validation_token):
     if user is None:
         return False
 
+    return True
+
+@transact
+def generate_password_reset_token(session, state, tid, username, email):
+    '''transact version of db_generate_password_reset_token'''
+    return db_generate_password_reset_token(session, state, tid, username, email)
+
+def db_generate_password_reset_token(session, state, tid, username, email):
+    '''Generates a reset token against the backend, then send email to validate it'''
+    from globaleaks.handlers.admin.notification import db_get_notification
+    from globaleaks.handlers.admin.node import db_admin_serialize_node
+    from globaleaks.handlers.admin.user import get_user
+    from globaleaks.handlers.user import user_serialize_user
+
+    user = session.query(models.User).filter(
+        models.User.username == username,
+        models.User.mail_address == email
+    ).one_or_none()
+
+    if user is None:
+        return None
+
     user.reset_password_token = generateRandomKey(32)
     user.reset_password_date = datetime_now()
     user.password_change_needed = True
@@ -58,28 +76,6 @@ def db_validate_password_reset(session, validation_token):
     }
 
     state.format_and_send_mail(session, tid, user_desc, template_vars)
-
-    return True
-
-@transact
-def generate_password_reset_token(session, state, tid, username, email):
-    '''transact version of db_generate_password_reset_token'''
-
-    return db_generate_password_reset_token(session, tid, username, email)
-
-def db_generate_password_reset_token(session, state, tid, username, email):
-    '''Generates a reset token against the backend'''
-
-    user = session.query(models.User).filter(
-        models.User.username == username,
-        models.User.mail_address == email
-    ).one_or_none()
-
-    if user is None:
-        raise None
-
-    user_dict = user_serialize_user(session, user, user.language)
-    print(user_dict)
 
 class PasswordResetHandler(BaseHandler):
     check_roles = '*'
