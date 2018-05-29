@@ -161,3 +161,18 @@ class QuestionnaireInstance(BaseHandler):
         q['export_date'] = datetime_to_ISO8601(datetime_now())
         q['export_version'] = QUESTIONNAIRE_EXPORT_VERSION
         returnValue(q)
+
+class QuestionnareDuplication(BaseHandler):
+    check_roles = 'admin'
+    invalidate_cache = True
+
+    @inlineCallbacks
+    def get(self, questionnaire_id):
+        """
+        Duplicates a questionnaire
+        """
+
+        q = yield get_questionnaire(self.request.tid, questionnaire_id, None)
+        q['export_date'] = datetime_to_ISO8601(datetime_now())
+        q['export_version'] = QUESTIONNAIRE_EXPORT_VERSION
+        returnValue(q)

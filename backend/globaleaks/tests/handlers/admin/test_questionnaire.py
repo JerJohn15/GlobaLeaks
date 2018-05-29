@@ -6,12 +6,21 @@ from sqlalchemy.exc import IntegrityError
 from twisted.python import failure
 from twisted.internet.defer import inlineCallbacks
 
+from globaleaks import models
+from globaleaks.orm import transact
 from globaleaks.handlers.admin import questionnaire
 from globaleaks.models import Questionnaire
 from globaleaks.rest import errors
 from globaleaks.tests import helpers
 from globaleaks.utils.utility import read_json_file
 
+@transact
+def get_questionnare_id(session):
+    '''Returns first questionnare ID'''
+    questionnare_obj = session.query(models.Questionnaire).filter(models.Questionnaire.id != 'default').first()
+    print(questionnare_obj)
+    session.expunge(questionnare_obj)
+    return questionnare_obj.id
 
 class TestQuestionnairesCollection(helpers.TestCollectionHandler):
     _handler = questionnaire.QuestionnairesCollection
@@ -50,3 +59,21 @@ class TestQuestionnaireInstance(helpers.TestInstanceHandler):
         'name': 'test'
       }
     }
+
+class TestQuestionnareDuplication(helpers.TestHandlerWithPopulatedDB):
+    _handler = questionnaire.QuestionnareDuplication
+
+    @inlineCallbacks
+    def setUp(self):
+        yield helpers.TestHandlerWithPopulatedDB.setUp(self)
+
+    @inlineCallbacks
+    def test_duplicate_questionnaire(self):
+      #q_id = yield get_questionnare_id()
+      #print(q_id)
+
+      handler = self.request(role='admin')
+      response = yield handler.get('default')
+
+      #import pprint
+      #pprint.pprint(response)
