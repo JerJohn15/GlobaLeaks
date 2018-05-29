@@ -19,9 +19,7 @@ node_keywords = [
     '{TorUrl}',
     '{TorLoginUrl}',
     '{HTTPSUrl}',
-    '{HTTPSLoginUrl}',
-    '{AdminCredentials}',
-    '{RecipientCredentials}'
+    '{HTTPSLoginUrl}'
 ]
 
 context_keywords = [
@@ -171,12 +169,6 @@ class NodeKeyword(Keyword):
 
     def DocumentationUrl(self):
         return 'https://docs.globaleaks.org'
-
-    def AdminCredentials(self):
-        return '\n\n role: admin\n username: admin\n password: admin'
-
-    def RecipientCredentials(self):
-        return '\n\n role: recipient\n username: recipient\n password: recipient'
 
 
 class UserKeyword(Keyword):

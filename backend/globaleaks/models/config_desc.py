@@ -116,6 +116,9 @@ ConfigDescriptor = {
 
     u'enable_signup': Bool(default=False),
     u'signup_mode': Unicode(default=u'default'),
+    u'signup_no_admin': Bool(default=False),
+    u'signup_tos1_enable': Bool(default=False),
+    u'signup_tos2_enable': Bool(default=False),
 
     u'enable_footer_customization': Bool(default=False),
 
@@ -180,6 +183,9 @@ ConfigFilters = {
         u'disable_donation_panel',
         u'enable_signup',
         u'signup_mode',
+        u'signup_no_admin',
+        u'signup_tos_1_enable',
+        u'signup_tos_2_enable',
         u'enable_footer_customization',
         u'counter_submissions',
         u'enable_captcha',
