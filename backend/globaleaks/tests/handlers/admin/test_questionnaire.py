@@ -14,22 +14,15 @@ from globaleaks.rest import errors
 from globaleaks.tests import helpers
 from globaleaks.utils.utility import read_json_file
 
-@transact
-def get_questionnare_id(session):
-    '''Returns first questionnare ID'''
-    questionnare_obj = session.query(models.Questionnaire).filter(models.Questionnaire.id != 'default').first()
-    print(questionnare_obj)
-    session.expunge(questionnare_obj)
-    return questionnare_obj.id
 
 class TestQuestionnairesCollection(helpers.TestCollectionHandler):
     _handler = questionnaire.QuestionnairesCollection
     _test_desc = {
-      'model': Questionnaire,
-      'create': questionnaire.create_questionnaire,
-      'data': {
-        'name': 'test'
-      }
+        'model': Questionnaire,
+        'create': questionnaire.create_questionnaire,
+        'data': {
+            'name': 'test'
+        }
     }
 
     @inlineCallbacks
@@ -53,15 +46,29 @@ class TestQuestionnairesCollection(helpers.TestCollectionHandler):
 class TestQuestionnaireInstance(helpers.TestInstanceHandler):
     _handler = questionnaire.QuestionnaireInstance
     _test_desc = {
-      'model': Questionnaire,
-      'create': questionnaire.create_questionnaire,
-      'data': {
-        'name': 'test'
-      }
+        'model': Questionnaire,
+        'create': questionnaire.create_questionnaire,
+        'data': {
+            'name': 'test'
+        }
     }
+
 
 class TestQuestionnareDuplication(helpers.TestHandlerWithPopulatedDB):
     _handler = questionnaire.QuestionnareDuplication
+
+    @transact
+    def get_questionnare_count(self, session):
+        '''Gets a count of the questionnaires'''
+        return session.query(models.Questionnaire).count()
+
+    @transact
+    def get_new_questionnare_id(self, session):
+        '''Returns first questionnare ID'''
+        questionnare_obj = session.query(models.Questionnaire).filter(
+            models.Questionnaire.id != 'default').first()
+        session.expunge(questionnare_obj)
+        return questionnare_obj.id
 
     @inlineCallbacks
     def setUp(self):
@@ -69,11 +76,12 @@ class TestQuestionnareDuplication(helpers.TestHandlerWithPopulatedDB):
 
     @inlineCallbacks
     def test_duplicate_questionnaire(self):
-      #q_id = yield get_questionnare_id()
-      #print(q_id)
+        # Sanity check our base behavior
+        questionnaire_count = yield self.get_questionnare_count()
+        self.assertEqual(questionnaire_count, 1)
 
-      handler = self.request(role='admin')
-      response = yield handler.get('default')
+        handler = self.request(role='admin')
+        response = yield handler.get('default')
 
-      #import pprint
-      #pprint.pprint(response)
+        questionnaire_count = yield self.get_questionnare_count()
+        self.assertEqual(questionnaire_count, 2)
