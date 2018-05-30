@@ -78,10 +78,15 @@ controller('AdminQuestionnaireEditorCtrl', ['$scope', '$http', 'Utils', 'FileSav
   };
 
   $scope.duplicate_questionnaire = function(obj) {
-    console.log("Test");
-    console.log(obj.id);
-    console.log(obj);
-    console.log(obj.duplicate_name);
+    $http.post(
+      'admin/questionnaires/duplicate',
+      {
+        questionnaire_id: obj.id,
+        new_name: obj.duplicate_name
+      }
+    ).then(function (response) {
+      $scope.reload()
+    })
   };
 
   $scope.exportQuestionnaire = function(obj) {

@@ -205,6 +205,7 @@ class QuestionnareDuplication(BaseHandler):
         Duplicates a questionnaire
         """
 
+        print("HERE")
         request = self.validate_message(self.request.content.read(),
                                         requests.QuestionnaireDuplicationDesc)
 
