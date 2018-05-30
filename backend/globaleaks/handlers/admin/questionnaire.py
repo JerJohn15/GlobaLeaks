@@ -113,7 +113,7 @@ def update_questionnaire(session, tid, questionnaire_id, request, language):
     return serialize_questionnaire(session, tid, questionnaire, language)
 
 @transact
-def duplicate_questionnaire(session, state, tid, questionnaire_id):
+def duplicate_questionnaire(session, state, tid, questionnaire_id, new_name):
     """
     Duplicates a questionaire, assigning new IDs to all sub components
     """
@@ -137,6 +137,8 @@ def duplicate_questionnaire(session, state, tid, questionnaire_id):
             # And now we need to keep going down the latter
             for attr in child['attrs'].values():
                 attr['id'] = text_type(uuid.uuid4())
+
+    q['name'] = new_name
 
     db_create_questionnaire(session, state, tid, q, None)
 
@@ -198,10 +200,16 @@ class QuestionnareDuplication(BaseHandler):
     invalidate_cache = True
 
     @inlineCallbacks
-    def get(self, questionnaire_id):
+    def post(self):
         """
         Duplicates a questionnaire
         """
 
-        q = yield duplicate_questionnaire(self.state, self.request.tid, questionnaire_id)
+        request = self.validate_message(self.request.content.read(),
+                                        requests.QuestionnaireDuplicationDesc)
+
+        q = yield duplicate_questionnaire(self.state,
+                                          self.request.tid,
+                                          request['questionnaire_id'],
+                                          request['new_name'])
         returnValue(q)

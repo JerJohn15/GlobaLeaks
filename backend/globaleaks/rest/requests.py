@@ -562,3 +562,8 @@ ExceptionDesc = {
     'stackTrace': list,
     'agent': text_type
 }
+
+QuestionnaireDuplicationDesc = {
+    'questionnaire_id': text_type,
+    'new_name': text_type
+}
