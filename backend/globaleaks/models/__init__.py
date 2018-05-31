@@ -688,7 +688,7 @@ class _InternalTip(Model):
         return (ForeignKeyConstraint(['tid'], ['tenant.id'], ondelete='CASCADE', deferrable=True, initially='DEFERRED'),
                 ForeignKeyConstraint(['context_id'], ['context.id'], ondelete='CASCADE', deferrable=True, initially='DEFERRED'),
                 ForeignKeyConstraint(['questionnaire_hash'], ['archivedschema.hash'], ondelete='CASCADE', deferrable=True, initially='DEFERRED'),
-                ForeignKeyConstraint(['tip_status'], ['submissionstates'], deferrable=True, initially='DEFERRED'))
+                ForeignKeyConstraint(['tip_status'], ['submissionstates.id'], deferrable=True, initially='DEFERRED'))
 
 
 class _Mail(Model):
@@ -1157,6 +1157,8 @@ class ReceiverTip(_ReceiverTip, Base): pass
 class SecureFileDelete(_SecureFileDelete, Base): pass
 class ShortURL(_ShortURL, Base): pass
 class Signup(_Signup, Base): pass
+class SubmissionStates(_SubmissionStates, Base): pass
+class SubmissionStateChanges(_SubmissionStateChanges, Base): pass
 class Stats(_Stats, Base): pass
 class Step(_Step, Base): pass
 class Tenant(_Tenant, Base): pass
