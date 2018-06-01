@@ -13,6 +13,7 @@
 
 # Author: Giovanni Pellerano <evilaliv3@globaleaks.org>
 
+touch /tmp/1
 PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin
 NAME=$(basename $(readlink -nf $0))
 
@@ -29,10 +30,12 @@ WAITFORDAEMON=60
 # settings that could not be overridden from the configuration
 # that can be issued from the web interface
 if test -e "/usr/share/globaleaks/default" ; then
+    touch /tmp/2
     . "/usr/share/globaleaks/default"
 fi
 
 if [[ ! -f /var/globaleaks/globaleaks.db ]]; then
+    touch /tmp/3
     # FIRST SETUP
     NETWORK_SANDBOXING=0
 elif [[ "$(gl-admin getvar reachable_via_web 2>1&)" != "True" ]]; then
@@ -41,28 +44,38 @@ else
     NETWORK_SANDBOXING=0
 fi
 
+touch /tmp/4
 if test -e "/etc/default/globaleaks" ; then
+    touch /tmp/5
     . "/etc/default/globaleaks"
 fi
 
 if [[ "$APPARMOR_SANDBOXING" -eq "1" ]]; then
+    touch /tmp/6
     if [[ "$(cat /sys/module/apparmor/parameters/enabled 2>/dev/null)" != 'Y' ]]; then
+        touch /tmp/7
         echo "WARNING: Missing Apparmor Sandboxing support"
         APPARMOR_SANDBOXING=0
     elif [[ "`apparmor_status | grep -c 'globaleaks'`" -eq "0" ]]; then
+        touch /tmp/8
         service apparmor restart
         if [[ "`apparmor_status | grep -c 'globaleaks'`" -eq "0" ]]; then
+         touch /tmp/9
             echo "WARNING: Missing Apparmor Sandboxing support"
             APPARMOR_SANDBOXING=0
         fi
     fi
 fi
 ##################################################################
+touch /tmp/10
 . /lib/init/vars.sh
+touch /tmp/11
 
 . /lib/lsb/init-functions
+touch /tmp/12
 
 test $DEBIAN_SCRIPT_DEBUG && set -v -x
+touch /tmp/13
 
 if [ "$EUID" -ne "0" ]; then
     echo "Error: GlobaLeaks init script must be run as root" 1>&2
@@ -71,8 +84,10 @@ fi
 
 GLBACKEND_PIDFILE=/var/run/globaleaks/globaleaks.pid
 
+touch /tmp/14
 # Let's try to figure our some sane defaults:
 if [ -r /proc/sys/fs/file-max ]; then
+    touch /tmp/15
     system_max=`cat /proc/sys/fs/file-max`
     if [ "$system_max" -gt "80000" ] ; then
         MAX_FILEDESCRIPTORS=32768
@@ -99,11 +114,13 @@ fi
 
 read_pid()
 {
+    touch /tmp/16
     if [ -e ${GLBACKEND_PIDFILE} ]; then
         GLBACKEND_PID=`cat ${GLBACKEND_PIDFILE}`
     else
         GLBACKEND_PID=0
     fi
+    touch /tmp/17
 }
 
 wait_for_deaddaemon () {
@@ -130,28 +147,37 @@ wait_for_deaddaemon () {
 
 check_iptables()
 {
+    touch /tmp/18
     if ! which iptables >/dev/null 2>&1 ; then
         echo "GlobaLeaks Network Sandboxing Failure: requires iptables"
         return 1
     fi
 
+    touch /tmp/19
     iptables -nvL -t nat >/dev/null 2>&1
     if [ "$?" -ne "0" ]; then
+        touch /tmp/199
         echo "GlobaLeaks Network Sandboxing Failure: missing iptables nat support"
         return 1
     fi
 
+    touch /tmp/20
     iptables -nvL -t filter >/dev/null 2>&1
     if [ "$?" -ne "0" ]; then
+        touch /tmp/200
         echo "GlobaLeaks Network Sandboxing Failure: missing iptables filter support"
         return 1
     fi
 
+    touch /tmp/21
     iptables -m owner -h >/dev/null 2>&1
     if [ "$?" -ne "0" ]; then
+        touch /tmp/211
         echo "GlobaLeaks Network Sandboxing Failure: missing iptables owner support"
         return 1
     fi
+
+    touch /tmp/22
 
     return 0
 }
@@ -161,8 +187,10 @@ network_sandboxing_start()
     if [[ "$NETWORK_SANDBOXING" -eq "1" ]]; then
         log_action_begin_msg "Enabling GlobaLeaks Network Sandboxing"
 
+        touch /tmp/23
         iptables -L | grep "globaleaks-network-sandboxing" >/dev/null 2>&1
         if [ "$?" -eq "0" ]; then
+            touch /tmp/233
             log_action_end_msg 0 "already enabled."
             return
         fi
@@ -170,6 +198,7 @@ network_sandboxing_start()
         # INBOUND LOCAL
         declare -a PORTS=("8082" "8083")
         for PORT in "${PORTS[@]}"; do
+            touch /tmp/24
             iptables -m comment --comment "globaleaks-network-sandboxing" -A INPUT -p tcp -d 127.0.0.1 --dport $PORT -s 127.0.0.1 -j ACCEPT
             iptables -m comment --comment "globaleaks-network-sandboxing" -A INPUT -p tcp -d 0.0.0.0/0 --dport $PORT -j DROP
         done
@@ -177,19 +206,28 @@ network_sandboxing_start()
         # INBOUND REMOTE
         declare -a PORTS=("80" "443")
         for PORT in "${PORTS[@]}"; do
+            touch /tmp/25
             iptables -m comment --comment "globaleaks-network-sandboxing" -A INPUT -p tcp -d 0.0.0.0/0 --dport $PORT -s 127.0.0.1 -j ACCEPT
             iptables -m comment --comment "globaleaks-network-sandboxing" -A INPUT -p tcp -d 0.0.0.0/0 --dport $PORT -j DROP
         done
 
         # OUTBOUND
         # All outbound connections from GlobaLeaks goes through Tor except of allowed and enstablished connections.
+        touch /tmp/26
         iptables -m comment --comment "globaleaks-network-sandboxing" -A OUTPUT -m state --state RELATED,ESTABLISHED -m owner --uid-owner globaleaks -s 127.0.0.1 -d 127.0.0.1 -j ACCEPT
+        touch /tmp/27
         iptables -m comment --comment "globaleaks-network-sandboxing" -t nat -A OUTPUT ! -o lo -p tcp -m owner --uid-owner ${USERNAME} -m tcp -j REDIRECT --to-ports 9050
+        touch /tmp/28
         iptables -m comment --comment "globaleaks-network-sandboxing" -t nat -A OUTPUT ! -o lo -p udp -m owner --uid-owner ${USERNAME} -m udp --dport 53 -j REDIRECT --to-ports 5353
+        touch /tmp/29
         iptables -m comment --comment "globaleaks-network-sandboxing" -t filter -A OUTPUT -p tcp -m owner --uid-owner ${USERNAME} -m tcp -s 127.0.0.1 -d 127.0.0.1 --dport 9040 -j ACCEPT
+        touch /tmp/30
         iptables -m comment --comment "globaleaks-network-sandboxing" -t filter -A OUTPUT -p udp -m owner --uid-owner ${USERNAME} -m udp -s 127.0.0.1 -d 127.0.0.1 --dport 53 -j ACCEPT
+        touch /tmp/31
         iptables -m comment --comment "globaleaks-network-sandboxing" -t filter -A OUTPUT -p tcp -m owner --uid-owner ${USERNAME} -m tcp -s 127.0.0.1 -d 127.0.0.1 --dport 9050 -j ACCEPT
+        touch /tmp/32
         iptables -m comment --comment "globaleaks-network-sandboxing" -t filter -A OUTPUT ! -o lo -m owner --uid-owner ${USERNAME} -j DROP
+        touch /tmp/33
 
         log_action_end_msg 0
     fi
@@ -221,10 +259,12 @@ do_start()
 
     GLBACKEND_DAEMON=`which globaleaks`
     if [ ! ${GLBACKEND_DAEMON} ]; then
+        touch /tmp/34
         log_end_msg 1 "Globlaleaks is not installed"
         exit 1
     fi
 
+    touch /tmp/35
     GLBACKEND_ARGS="--ip=${LISTENING_IP}
                     --user=${USERNAME}
                     --group=${GROUP}
@@ -237,35 +277,48 @@ do_start()
 
     STARTCMD="${GLBACKEND_DAEMON} ${GLBACKEND_ARGS}"
 
+    touch /tmp/36
     read_pid
+    touch /tmp/37
 
     if ! id -u ${USERNAME} >/dev/null 2>&1; then
        log_end_msg 1 "unexistent user (${USERNAME})"
        exit 1
     fi
 
+    touch /tmp/39
     # Check to see if the GLBackend daemon is already running.
     if [ "${GLBACKEND_PID}" -ne "0" ]; then
+        touch /tmp/40
         if kill -0 ${GLBACKEND_PID} >/dev/null 2<&-; then
             log_end_msg 0 "GlobaLeaks already running at pid ${GLBACKEND_PID}"
             exit 0
         fi
+        touch /tmp/41
     fi
 
+    touch /tmp/42
     network_sandboxing_start
+    touch /tmp/43
 
     if [ "${APPARMOR_SANDBOXING}" -eq "1" ]; then
+        touch /tmp/44
         STARTCMD="aa-exec --profile=usr.bin.globaleaks -- $STARTCMD"
+        touch /tmp/45
     fi
 
     # This is a little hack to avoid python doing os.chdir('.') and getting mad.
     cd /tmp
 
+    touch /tmp/46
     gl-fix-permissions
+    touch /tmp/47
 
     if ${STARTCMD}; then
+        touch /tmp/48
         log_end_msg 0 "started."
     else
+        touch /tmp/37
         log_end_msg 1 "problem when starting."
     fi
 }
