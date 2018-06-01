@@ -1,4 +1,6 @@
 # -*- coding: utf-8 -*-
+import uuid
+
 from sqlalchemy import not_
 
 from six import text_type
@@ -217,28 +219,23 @@ def system_cfg_init(session, tid):
 
         session.add(Config(tid, var_name, default))
 
-# Not entirely sure this is the right location
-NEW_SUBMISSION_STATE_ID = "1f4b2ecf-e151-4470-a6a3-f5715a8e8c55"
-OPEN_SUBMISSION_STATE_ID = "41a525d8-305c-4ab4-ad08-bb621bcfb6c2"
-CLOSED_SUBMISSION_STATE_ID = "4d5de1d3-d648-461d-9b7f-8fc50fa26914"
-
 def load_required_submission_states(session, tid):
     '''We'll merge the required states so they will update changes for known states'''
     new_state = SubmissionStates()
-    new_state.id = NEW_SUBMISSION_STATE_ID
+    new_state.id = text_type(uuid.uuid4())
     new_state.tid = tid
     new_state.submission_state = 'new' # this is ignored in the UI
 
     open_state = SubmissionStates()
-    open_state.id = OPEN_SUBMISSION_STATE_ID
+    open_state.id = text_type(uuid.uuid4())
     open_state.tid = tid
     open_state.submission_state = 'open' # this is ignored in the UI
 
     closed_state = SubmissionStates()
-    closed_state.id = CLOSED_SUBMISSION_STATE_ID
+    closed_state.id = text_type(uuid.uuid4())
     closed_state.tid = tid
     closed_state.submission_state = 'closed' # this is ignored in the UI
 
-    session.merge(new_state)
-    session.merge(open_state)
-    session.merge(closed_state)
+    session.add(new_state)
+    session.add(open_state)
+    session.add(closed_state)

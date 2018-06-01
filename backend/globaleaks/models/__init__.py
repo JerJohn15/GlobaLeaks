@@ -681,14 +681,13 @@ class _InternalTip(Model):
     wb_access_counter = Column(Integer, default=0, nullable=False)
 
     # UUID is "known" value of New status
-    tip_status = Column(Unicode(36), default="1f4b2ecf-e151-4470-a6a3-f5715a8e8c55", nullable=False)
+    #tip_status = Column(Unicode(36), default="1f4b2ecf-e151-4470-a6a3-f5715a8e8c55", nullable=False)
 
     @declared_attr
     def __table_args__(cls): # pylint: disable=no-self-argument
         return (ForeignKeyConstraint(['tid'], ['tenant.id'], ondelete='CASCADE', deferrable=True, initially='DEFERRED'),
                 ForeignKeyConstraint(['context_id'], ['context.id'], ondelete='CASCADE', deferrable=True, initially='DEFERRED'),
-                ForeignKeyConstraint(['questionnaire_hash'], ['archivedschema.hash'], ondelete='CASCADE', deferrable=True, initially='DEFERRED'),
-                ForeignKeyConstraint(['tip_status'], ['submissionstates.id'], deferrable=True, initially='DEFERRED'))
+                ForeignKeyConstraint(['questionnaire_hash'], ['archivedschema.hash'], ondelete='CASCADE', deferrable=True, initially='DEFERRED'))
 
 
 class _Mail(Model):
