@@ -138,6 +138,7 @@ var GLClient = angular.module('GLClient', [
           file_overview: function() { return FileOverview.query().$promise },
           jobs_overview: function() { return JobsOverview.query().$promise },
           questionnaires: function() { return AdminQuestionnaireResource.query().$promise },
+          submission_states: function() { return AdminSubmissionState.query().$promise },
         }
 
         return Access.isAuthenticated(role).then(function() {
@@ -332,6 +333,15 @@ var GLClient = angular.module('GLClient', [
         header_subtitle: 'Sites management',
         resolve: {
           resources: fetchResources('admin', ['node', 'tenants']),
+        }
+      }).
+      when('/admin/submission_states', {
+        templateUrl: 'views/admin/submission_states.html',
+        controller: 'AdminCtrl',
+        header_title: 'Administration interface',
+        header_subtitle: 'Submission states',
+        resolve: {
+          resources: fetchResources('admin', ['node']),
         }
       }).
       when('/admin', {

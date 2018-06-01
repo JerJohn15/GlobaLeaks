@@ -583,7 +583,9 @@ factory("Access", ["$q", "Authentication", function ($q, Authentication) {
 }]).
   factory('AdminReceiverResource', ['GLResource', function(GLResource) {
     return new GLResource('admin/receivers/:id', {id: '@id'});
-
+}]).
+  factory('AdminSubmissionState', ['GLResource', function(GLResource) {
+    return new GLResource('admin/submission_states/:id', {id: '@id'});
 }]).
 service('UpdateService', [function() {
   return {
