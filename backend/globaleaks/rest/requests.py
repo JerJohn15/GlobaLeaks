@@ -562,3 +562,7 @@ ExceptionDesc = {
     'stackTrace': list,
     'agent': text_type
 }
+
+SubmissionStateDesc = {
+    'submission_state': text_type
+}
